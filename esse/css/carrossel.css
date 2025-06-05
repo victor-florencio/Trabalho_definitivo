@@ -1,0 +1,84 @@
+.carousel-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+    margin-top: 3em;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+  }
+
+  .carousel-slide {
+    min-width: 100%;
+    position: relative;
+    color: white;
+  }
+
+  .carousel-slide img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+  }
+
+  .slide-content {
+    position: absolute;
+    bottom: 60px;
+    left: 60px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 20px 30px;
+    border-radius: 10px;
+    max-width: 500px;
+  }
+
+  .slide-content h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+  }
+
+  .slide-content p {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+  }
+
+  .slide-content a {
+    padding: 10px 20px;
+    background-color: #fff;
+    color: #000;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+  }
+
+  .nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+  }
+
+  .nav-button:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .prev {
+    left: 15px;
+  }
+
+  .next {
+    right: 15px;
+  }
+
+  .exbtn{
+    top: 1px;
+  }

@@ -1,0 +1,20 @@
+.miniaturas-galeria {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.miniatura {
+    flex: 1;
+    max-width: 12.5%; /* 4 imagens = 50% total (4 x 12.5%) */
+    height: auto;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.miniatura:hover {
+    opacity: 0.6;
+}

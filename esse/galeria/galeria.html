@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Meta Tags -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GSAP | Animated Bottle Scroll</title>
+
+  <!-- Google Fonts: Inter -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+    rel="stylesheet" />
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="./stys.css">
+</head>
+
+<body id="smooth-wrapper">
+
+  <!-- ================== HEADER ================== -->
+  <header style="--border-width:0;">
+    <div class="header-inner">
+
+      <!-- Logo -->
+      <div class="logo">TreeDom</div>
+
+      <!-- Desktop Navigation -->
+      <nav class="desktop-nav">
+        <a href="\esse\index.html">Retornar</a>
+      </nav>
+
+      <!-- Hamburger Icon for Mobile -->
+      <div class="hamburger" onclick="toggleMobileNav()">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-nav" id="mobileMenu">
+      <a href="">Retornar</a>
+      
+    </div>
+  </header>
+
+  <!-- ================== MAIN CONTENT ================== -->
+  <main id="smooth-content">
+
+    <!-- Hero Bottle Overlay Wrapper -->
+    <div class="hero-bottle-wrapper">
+      <img src="arvore-Photoroom.png" alt="Crimson Fermentation Bottle"
+        class="hero-bottle" />
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero vintage-hero">
+      <div class="hero-content">
+        <!-- Decorative Stamp -->
+        <img src="" alt=""
+          class="hero-stamp">
+
+        <!-- Main Heading -->
+        <h1>
+          <span class="line">Nossa Primeira</span>
+          <span class="line highlight">Arvore</span>
+        </h1>
+      </div>
+    </section>
+
+    <!-- Introduction Section -->
+    <section class="section-intro">
+      <div class="intro-grid">
+
+        <!-- Left Side: Headings and Description -->
+        <div class="intro-left">
+          <p class="small-title">Nosso trabalho</p>
+          <h2 class="main-heading">Sobre nós</h2>
+          <p class="description">
+            Cada árvore plantada representa uma História viva.
+          </p>
+          <a href="#" class="cta-box">Porque árvores</a>
+        </div>
+
+        <!-- Right Side: Ingredients List -->
+        <div class="intro-right">
+          <div class="ingredients-log">
+            <h3 class="ingredients-title">Impactos</h3>
+
+            <!-- Each Ingredient -->
+            <div class="ingredient-item">
+              <div class="ingredient-qty">Plante</div>
+              <div class="ingredient-text">
+                <strong>1 arvore plantada</strong>
+                <p>Sua árvore cresce,respira e transforma o mundo ao seu redor.</p>
+              </div>
+            </div>
+
+            <div class="ingredient-item">
+              <div class="ingredient-qty">Arte</div>
+              <div class="ingredient-text">
+                <strong>1 História registrada</strong>
+                <p>Uma carta colecionável eterniza sua ação, como memória e arte</p>
+              </div>
+            </div>
+
+            <div class="ingredient-item">
+              <div class="ingredient-qty">Eco</div>
+              <div class="ingredient-text">
+                <strong>100% sustentabilidade</strong>
+                <p>Todas as ações são pensadas para gerar impacto positivo e respeitar o meio ambiente</p>
+              </div>
+            </div>
+
+            <div class="ingredient-item">
+              <div class="ingredient-qty">Local</div>
+              <div class="ingredient-text">
+                <strong>Fortalecimento</strong>
+                <p>Incentivamos comunidades a proteger e regenerar seus ecossistemas</p>
+              </div>
+            </div>
+
+            <div class="ingredient-item">
+              <div class="ingredient-qty">Marca</div>
+              <div class="ingredient-text">
+                <strong>Legado Duradouro</strong>
+                <p>Você cria mais que um presente ao planeta, um legado que atravessa gerações</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section class="timeline-section">
+      <h2 class="timeline-main-title">Curiosidades</h2>
+
+      <!-- First Timeline Entry -->
+      <div class="timeline-entry">
+        <!-- Left Column: Date + Image -->
+        <div class="timeline-left">
+          <div class="timeline-date">2024</div>
+          <img src="ben.jpg" alt="Vintage Brewery Photo"
+            class="timeline-img" />
+        </div>
+
+        <!-- Right Column: Story -->
+        <div class="timeline-right">
+          <h3 class="timeline-title">Nossa primeira árvore</h3>
+          <p class="timeline-description">
+           Em toda nossa jornada, a benjamina foi a primeira árvore que plantamos e seguimos com seu crescimento até hoje.
+          </p>
+        </div>
+      </div>
+
+      <!-- Second Timeline Entry -->
+      <div class="timeline-entry">
+        <div class="timeline-left">
+          <div class="timeline-date"></div>
+          <img src="arvore.jpg" alt="Vintage Brewery Photo"
+            class="timeline-img" />
+        </div>
+
+        <div class="timeline-right">
+          <h3 class="timeline-title">Carta Exclusiva</h3>
+          <p class="timeline-description">
+            A carta benjamina é uma peça única, e conta a história da árvore e do impacto que ela gera.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social Sidebar (Fixed vertical navigation) -->
+    <aside class="social-sidebar" style="--border-height:0;">
+      <nav>
+        
+      </nav>
+    </aside>
+  </main>
+
+  <!-- ================== FOOTER ================== -->
+  
+  
+
+  <!-- ================== JAVASCRIPT ================== -->
+  <script src="https://unpkg.com/lenis@1.3.4/dist/lenis.min.js"></script>
+
+  
+
+  <!-- GSAP Core Library -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+  <!-- GSAP ScrollTrigger Plugin -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+
+  <!-- Custom Main Script -->
+  <script src="main.js"></script>
+
+  <script src="lennis.js"></script>
+
+</body>
+
+</html>
