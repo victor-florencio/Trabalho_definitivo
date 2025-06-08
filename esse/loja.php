@@ -10,36 +10,82 @@ if (!isset($_SESSION['nome']) || !isset($_SESSION['id'])) {
 
 $id_user = $_SESSION['id'];
 $trees_newly_acquired = []; 
+$show_payment_modal = false;
+$payment_error = '';
+$pedido_realizado = false;
+
+
+$localidades = [];
+$especies_por_localidade = [];
+$resLoc = $conexao->query("SELECT DISTINCT localidade FROM arvores WHERE localidade IS NOT NULL AND localidade <> '' ORDER BY localidade ASC");
+if ($resLoc) {
+    while ($row = $resLoc->fetch_assoc()) {
+        $localidades[] = $row['localidade'];
+    }
+}
+
+$resEsp = $conexao->query("SELECT localidade, especie FROM arvores WHERE localidade IS NOT NULL AND localidade <> '' AND especie IS NOT NULL AND especie <> '' ORDER BY localidade, especie ASC");
+if ($resEsp) {
+    while ($row = $resEsp->fetch_assoc()) {
+        $loc = $row['localidade'];
+        $esp = $row['especie'];
+        if (!isset($especies_por_localidade[$loc])) $especies_por_localidade[$loc] = [];
+        if (!in_array($esp, $especies_por_localidade[$loc])) $especies_por_localidade[$loc][] = $esp;
+    }
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['ganhar'])) {
-        $sql = "SELECT id, nome, img, raridade FROM cards ORDER BY RAND() LIMIT 2";
-    } elseif (isset($_POST['ganhar5'])) {
-        $sql = "SELECT id, nome, img, raridade FROM cards ORDER BY RAND() LIMIT 5";
-    }
-    if (isset($sql)) {
-        $result = $conexao->query($sql);
-        if ($result) {
-            while ($linha = $result->fetch_assoc()) {
-                $trees_newly_acquired[] = $linha;
-            }
-            foreach ($trees_newly_acquired as $tree) {
-                $tree_id_escaped = $conexao->real_escape_string($tree['id']);
-                $id_user_escaped = $conexao->real_escape_string($id_user);
-                $sql_in = "INSERT INTO user_cards (id_user, id_card) VALUES ('$id_user_escaped', '$tree_id_escaped')";
-                if (!$conexao->query($sql_in)) {
-                    error_log("Error associating tree with user $id_user: " . $conexao->error);
+    if (isset($_POST['confirmar_pagamento'])) {
+        $kit = $_POST['kit'] ?? '';
+        $localidade = trim($_POST['localidade'] ?? '');
+        $especie = trim($_POST['especie'] ?? '');
+        $pagamento = $_POST['pagamento'] ?? '';
+        if ($localidade && $especie && $pagamento && ($kit == '2' || $kit == '5')) {
+            // Insere na tabela pedidos
+            $nome_pedido = $kit == '2' ? 'Kit Sementes Raras' : 'Kit Floresta Diversa';
+            $status = 'Aguardando processamento';
+            $img_pedido = 'NULL'; 
+            $id_user_escaped = $conexao->real_escape_string($id_user);
+            $nome_pedido_escaped = $conexao->real_escape_string($nome_pedido);
+            $especie_escaped = $conexao->real_escape_string($especie);
+            $localidade_escaped = $conexao->real_escape_string($localidade);
+            $status_escaped = $conexao->real_escape_string($status);
+            $img_escaped = $conexao->real_escape_string($img_pedido);
+            $sql_pedido = "INSERT INTO pedidos (id_user, nome, especie, localidade, data_pedido, status, img)
+                VALUES ('$id_user_escaped', '$nome_pedido_escaped', '$especie_escaped', '$localidade_escaped', NOW(), '$status_escaped', '$img_escaped')";
+            $conexao->query($sql_pedido);
+            
+            $sql = $kit == '2'
+                ? "SELECT id, nome, img, raridade FROM cards ORDER BY RAND() LIMIT 2"
+                : "SELECT id, nome, img, raridade FROM cards ORDER BY RAND() LIMIT 5";
+            $result = $conexao->query($sql);
+            if ($result) {
+                while ($linha = $result->fetch_assoc()) {
+                    $trees_newly_acquired[] = $linha;
+                }
+                foreach ($trees_newly_acquired as $tree) {
+                    $tree_id_escaped = $conexao->real_escape_string($tree['id']);
+                    $sql_in = "INSERT INTO user_cards (id_user, id_card) VALUES ('$id_user_escaped', '$tree_id_escaped')";
+                    $conexao->query($sql_in);
                 }
             }
+            $pedido_realizado = true;
         } else {
-            error_log("Error fetching new trees: " . $conexao->error);
+            $payment_error = "Preencha todos os campos para continuar.";
+            $show_payment_modal = true;
         }
+    }
+   
+    elseif (isset($_POST['ganhar']) || isset($_POST['ganhar5'])) {
+        $show_payment_modal = true;
+        $kit = isset($_POST['ganhar']) ? '2' : '5';
     }
 }
 
 $user_trees_collection = [];
 $id_user_escaped_for_select = $conexao->real_escape_string($id_user);
-// Assuming 'user_cards' and 'cards' tables are used generically
+
 $sql_todes = "SELECT c.id, c.nome, c.img, c.raridade FROM user_cards cc JOIN cards c ON cc.id_card = c.id WHERE cc.id_user = '$id_user_escaped_for_select' ORDER BY c.nome ASC";
 $result_todes = $conexao->query($sql_todes);
 if ($result_todes) {
@@ -65,9 +111,9 @@ if ($result_todes) {
             --light: #f8f9fa;
             --dark: #343a40;
             --white: #ffffff;
-            --card-bg: #ffffff; /* Renaming this var might be good, but CSS class names are generic enough */
+            --card-bg: #ffffff;
             --card-shadow: rgba(0,0,0,0.08);
-            --success: #28a745; /* Green for success messages */
+            --success: #28a745;
         }
         
         body {
@@ -168,7 +214,7 @@ if ($result_todes) {
         
         .page-title-container {
             text-align: center;
-            padding: 30px 20px 10px; /* Adjusted padding */
+            padding: 30px 20px 10px;
         }
         .page-title-container h1 {
             font-size: 2.8rem;
@@ -178,13 +224,13 @@ if ($result_todes) {
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px; /* Consistent padding */
+            padding: 20px;
         }
         
-        .section-title { /* General section title */
+        .section-title {
             text-align: center;
             margin-bottom: 30px;
-            font-size: 2.2rem; /* Slightly smaller for sub-sections */
+            font-size: 2.2rem;
         }
 
         /* Store Item Section */
@@ -192,8 +238,8 @@ if ($result_todes) {
             padding: 30px 20px;
             background: var(--white);
             margin-bottom: 40px;
-            border-radius: 12px; /* Softer radius */
-            box-shadow: 0 8px 25px var(--card-shadow); /* More pronounced shadow for store */
+            border-radius: 12px;
+            box-shadow: 0 8px 25px var(--card-shadow);
         }
 
         .store-item {
@@ -221,10 +267,7 @@ if ($result_todes) {
             border-radius: 8px;
             transition: transform 0.3s ease;
             display: block;
-            /* Ajustes de margem para a imagem do pacote, se necessário, podem ser reavaliados ou removidos se não forem desejados para a imagem da árvore/muda */
-            /* margin-left: -25%; */ /* Exemplo de ajuste anterior, pode não ser ideal para árvores */
             margin-right: auto;
-            /* margin-top: -15%; */ /* Exemplo de ajuste anterior */
         }
         .store-item-image:hover {
             transform: scale(1.05);
@@ -342,27 +385,27 @@ if ($result_todes) {
             to { opacity: 1; }
         }
 
-        /* Item display styles (generic for tree or card) */
-        .item-grid { /* Renamed from card-grid for generality, but CSS can stay if .card-grid is used in HTML */
+        /* Item display styles */
+        .item-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
             gap: 20px; 
         }
         
-        .item-grid.centered-grid { /* Used for newly acquired items */
+        .item-grid.centered-grid {
             display: flex;
             justify-content: center;
             align-items: flex-start;
             gap: 20px;
             flex-wrap: nowrap; 
         }
-        .item-grid.centered-grid .tree-display-item { /* Renamed from .game-card for clarity */
+        .item-grid.centered-grid .tree-display-item {
             width: 180px;
             min-width: 180px;
             max-width: 180px;
         }
         
-        .tree-display-item { /* Renamed from .game-card for clarity */
+        .tree-display-item {
             background: var(--card-bg);
             border-radius: 10px; 
             overflow: hidden;
@@ -372,50 +415,47 @@ if ($result_todes) {
             flex-direction: column;
         }
         
-        .tree-display-item:hover { /* Renamed from .game-card:hover */
+        .tree-display-item:hover {
             transform: translateY(-6px) scale(1.03); 
             box-shadow: 0 7px 20px rgba(0,0,0,0.12);
         }
         
-        .tree-display-item img { /* Renamed from .game-card img */
+        .tree-display-item img {
             width: 100%;
             height: auto;
             aspect-ratio: 3/4.2; 
             object-fit: contain;
             background: #f8f9fa;
             border-bottom: 1px solid #eee; 
-            cursor: pointer; /* Adicionado para indicar que é clicável */
+            cursor: pointer;
         }
         
-        .tree-display-item-content { /* Renamed from .game-card-content */
+        .tree-display-item-content {
             padding: 12px; 
             text-align: center;
             flex-grow: 1; 
         }
         
-        .tree-display-item-content h3 { /* Renamed from .game-card-content h3 */
+        .tree-display-item-content h3 {
             margin-top: 0;
             margin-bottom: 0; 
             font-size: 1rem; 
-            /* color removido para usar por classe de raridade */
             font-family: 'Montserrat', sans-serif; 
             font-weight: 600;
         }
-        /* Cores por raridade */
-        .raridade-comum { color: #3a7d44; }      /* verde */
-        .raridade-rara { color: #2196f3; }       /* azul */
-        .raridade-epica { color: #a259e6; }      /* roxo */
+        .raridade-comum { color: #3a7d44; }
+        .raridade-rara { color: #2196f3; }
+        .raridade-epica { color: #a259e6; }
         .raridade-lendaria { 
-            color: #ffd700;                      /* dourado */
+            color: #ffd700;
             text-shadow: 0 0 6px #fffbe6, 0 0 12px #ffd70099;
         }
 
-        /* Animation for revealed items */
-        .revealed-item { /* Renamed from .revealed-card */
+        .revealed-item {
             opacity: 0; 
         }
 
-        @keyframes revealItemAnimation { /* Renamed from revealCardAnimation */
+        @keyframes revealItemAnimation {
             0% {
                 opacity: 0;
                 transform: translateY(40px) scale(0.7) rotateY(-90deg);
@@ -432,7 +472,7 @@ if ($result_todes) {
         /* Footer */
         footer {
             background: var(--dark); color: var(--light);
-            padding: 30px 20px; text-align: center; margin-top: 240px; /* Reduced margin-top from 130px */
+            padding: 30px 20px; text-align: center; margin-top: 240px;
         }
         footer p { margin:0; font-size: 0.9rem; }
 
@@ -464,19 +504,18 @@ if ($result_todes) {
             .dropdown { width: 100%; }
             .dropdown > a { justify-content: center; }
             .submenu { width: 100%; box-sizing: border-box;}
-            .item-grid { grid-template-columns: 1fr 1fr; gap: 12px;} /* two items per row on smallest screens */
+            .item-grid { grid-template-columns: 1fr 1fr; gap: 12px;}
             .store-item-details h3 { font-size: 1.6rem; }
             .store-item-price { font-size: 1.1rem; }
             .btn-buy { padding: 12px 25px; font-size: 1rem;}
             .reveal-section .congrats-title { font-size: 2.2rem; }
-            .store-item-image { /* Adjustments for very small screens if image was too pushed */
-                 margin-left: auto; /* Center image on small screens if flex-direction is column */
+            .store-item-image {
+                 margin-left: auto;
                  margin-right: auto;
                  margin-top: 0;
             }
         }
 
-        /* New CSS for aligning store items side by side */
         .store-items-row {
             display: flex;
             flex-direction: column;
@@ -529,6 +568,179 @@ if ($result_todes) {
             color: var(--accent);
         }
 
+        /* Modal de pagamento */
+        .modal-pagamento-bg {
+            display: none;
+            position: fixed;
+            z-index: 9998;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.65);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-pagamento-bg.active {
+            display: flex;
+        }
+        .modal-pagamento {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            padding: 32px 28px 24px;
+            max-width: 370px;
+            width: 95vw;
+            position: relative;
+            text-align: left;
+            animation: fadeInDrop 0.4s;
+            overflow: hidden; 
+            transition: height 0.4s ease;
+        }
+        .modal-pagamento h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+        .modal-pagamento label {
+            font-weight: 600;
+            margin-top: 12px;
+            display: block;
+        }
+        .modal-pagamento input[type="text"] {
+            width: 100%;
+            padding: 10px 3px; /* aumentado */
+            margin-top: 4px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1.15rem; /* aumentado */
+        }
+        .modal-pagamento .btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .modal-pagamento .btn-buy {
+            display: block;
+            margin: 24px auto 0 auto;
+            width: 80%;
+            max-width: 260px;
+            text-align: center;
+        }
+        .modal-pagamento .close-modal-pagamento {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-size: 1.7rem;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10001;
+            font-weight: bold;
+        }
+        .modal-pagamento .close-modal-pagamento:hover {
+            color: var(--accent);
+        }
+        .modal-pagamento .erro-pagamento {
+            color: #c00;
+            font-size: 0.98em;
+            margin-bottom: 8px;
+        }
+        
+        .metodos-pagamento {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 4px;
+            margin-bottom: 12px;
+        }
+        @media (min-width: 350px) {
+             .metodos-pagamento {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        .metodo-pagamento-btn {
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            padding: 10px 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #555;
+            transition: all 0.2s ease-in-out;
+        }
+        .metodo-pagamento-btn:hover {
+            background-color: #e9e9e9;
+            border-color: #ccc;
+        }
+        .metodo-pagamento-btn.active {
+            background-color: #e0f2e3;
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 5px rgba(58, 125, 68, 0.3);
+        }
+
+        #selecao-inicial-pagamento, #form-cartao-credito {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        
+        .btn-voltar {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 0;
+            margin-top: 10px;
+        }
+        .btn-voltar:hover {
+            text-decoration: underline;
+        }
+
+        /* --- ESTILOS PARA MELHORAR OS SELECTS --- */
+        .select-container {
+            position: relative;
+            width: 100%;
+            margin-top: 4px;
+            margin-bottom: 12px;
+        }
+
+        .select-container::after {
+            content: '▼';
+            font-size: 0.8rem;
+            color: var(--primary);
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none; /* Permite clicar no select através da seta */
+            transition: color 0.3s ease;
+        }
+
+        .select-container select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            
+            width: 100%;
+            padding: 10px 35px 10px 12px; /* Espaço para a nova seta */
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: var(--white);
+            font-size: 1rem;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--dark);
+            cursor: pointer;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .select-container select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(58, 125, 68, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -536,7 +748,7 @@ if ($result_todes) {
         <div class="nav-container">
             <a href="inipage.php" class="logo">Treedom</a>
             <ul class="nav-links">
-                <li><a href="inipage.php#work">Nosso Trabalho</a></li>
+                <li><a href="pedidos.php">Minhas Compras</a></li>
                 <li><a href="inipage.php#about">Sobre</a></li>
                 <li><a href="loja.php">Loja de Árvores</a></li>
                 <li class="dropdown">
@@ -568,31 +780,108 @@ if ($result_todes) {
            
             <div class="store-items-row">
                 <div class="store-item">
-                    <img src="data:image/jpeg;base64,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" alt="Kit de Plantio de Árvores" class="store-item-image">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPSnpzOOJ_IIWn5ulOjQRCCZnd1S8b7ri4sQ&s" alt="Kit de Plantio de Árvores" class="store-item-image">
                     <div class="store-item-details">
-                        <h3>Kit Sementes Raras</h3>
-                        <p class="store-item-description">Adquira este kit para cultivar 2 árvores e adicioná-las ao seu bosque!</p>
+                        <h3>Sementes Raras</h3>
+                        <p class="store-item-description">Compre uma árvore e ganhe 2 cartas para seu bosque</p>
                         <p class="store-item-price">Preço: <span>R$20</span></p>
-                        <form action="loja.php#newly-acquired" method="post">
-                            <button type="submit" name="ganhar" class="btn btn-buy">Adquirir Kit</button>
+                        <form action="loja.php#newly-acquired" method="post" class="form-kit">
+                            <button type="submit" name="ganhar" class="btn btn-buy">Adquirir árvore</button>
                         </form>
                     </div>
                 </div>
                 <div class="store-item">
                     <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="Kit Floresta Diversa" class="store-item-image">
                     <div class="store-item-details">
-                        <h3>Kit Floresta Diversa</h3>
-                        <p class="store-item-description">Receba 5 árvores diferentes para enriquecer ainda mais seu bosque!</p>
+                        <h3>Floresta Diversa</h3>
+                        <p class="store-item-description">Receba 5 cartas diferentes para enriquecer ainda mais seu bosque!</p>
                         <p class="store-item-price">Preço: <span>R$50</span></p>
-                        <form action="loja.php#newly-acquired" method="post">
-                            <button type="submit" name="ganhar5" class="btn btn-buy">Adquirir Kit Floresta</button>
+                        <form action="loja.php#newly-acquired" method="post" class="form-kit">
+                            <button type="submit" name="ganhar5" class="btn btn-buy">Adquirir Floresta</button>
                         </form>
                     </div>
                 </div>
             </div>
         </section>
 
-        <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['ganhar']) || isset($_POST['ganhar5'])) && !empty($trees_newly_acquired)): ?>
+        <div class="modal-pagamento-bg<?php if($show_payment_modal) echo ' active'; ?>" id="modalPagamentoBg">
+            <div class="modal-pagamento" id="modalPagamento">
+                <button class="close-modal-pagamento" id="closeModalPagamentoBtn" aria-label="Fechar">&times;</button>
+                
+                <form action="loja.php#newly-acquired" method="post" id="formPagamento">
+                    <div id="selecao-inicial-pagamento">
+                        <h2>Escolha onde plantar</h2>
+                        <?php if($payment_error): ?>
+                            <div class="erro-pagamento"><?php echo htmlspecialchars($payment_error); ?></div>
+                        <?php endif; ?>
+                        
+                        <input type="hidden" name="kit" value="<?php echo htmlspecialchars($kit ?? ($_POST['kit'] ?? '2')); ?>">
+                        
+                        <label for="localidade">Localidade:</label>
+                        <div class="select-container">
+                            <select name="localidade" id="localidade" required>
+                                <option value="">Selecione</option>
+                                <?php foreach($localidades as $loc): ?>
+                                    <option value="<?php echo htmlspecialchars($loc); ?>" <?php if(isset($_POST['localidade']) && $_POST['localidade'] == $loc) echo 'selected'; ?>>
+                                        <?php echo htmlspecialchars($loc); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <label for="especie">Espécie:</label>
+                        <div class="select-container">
+                            <select name="especie" id="especie" required>
+                                <option value="">Selecione</option>
+                                <?php
+                                    $especie_selected = $_POST['especie'] ?? '';
+                                    $localidade_selected = $_POST['localidade'] ?? '';
+                                    if ($localidade_selected && isset($especies_por_localidade[$localidade_selected])) {
+                                        foreach($especies_por_localidade[$localidade_selected] as $esp) {
+                                            $sel = ($especie_selected == $esp) ? 'selected' : '';
+                                            echo '<option value="'.htmlspecialchars($esp).'" '.$sel.'>'.htmlspecialchars($esp).'</option>';
+                                        }
+                                    }
+                                ?>
+                            </select>
+                        </div>
+
+                        <label>Forma de pagamento:</label>
+                        <div class="metodos-pagamento">
+                            <button type="button" class="metodo-pagamento-btn" data-metodo="cartao">Cartão de Crédito</button>
+                            <button type="button" class="metodo-pagamento-btn" data-metodo="pix">Pix</button>
+                            <button type="button" class="metodo-pagamento-btn" data-metodo="boleto">Boleto</button>
+                        </div>
+                        <input type="hidden" name="pagamento" id="pagamento_hidden" value="">
+                    </div>
+
+                    <div id="form-cartao-credito" style="display: none; opacity: 0; transform: translateX(20px);">
+                        <h2>Dados do Cartão</h2>
+                        <label for="cartao_numero">Número do Cartão:</label>
+                        <input type="text" id="cartao_numero" placeholder="0000 0000 0000 0000">
+
+                        <label for="cartao_nome">Nome no Cartão:</label>
+                        <input type="text" id="cartao_nome" placeholder="Nome como impresso no cartão">
+
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex-grow: 1;">
+                                <label for="cartao_validade">Validade:</label>
+                                <input type="text" id="cartao_validade" placeholder="MM/AA">
+                            </div>
+                            <div style="width: 80px;">
+                                <label for="cartao_cvv">CVV:</label>
+                                <input type="text" id="cartao_cvv" placeholder="123">
+                            </div>
+                        </div>
+                        <button type="button" class="btn-voltar" id="btnVoltarPagamento">← Voltar</button>
+                    </div>
+                    
+                    <button type="submit" name="confirmar_pagamento" class="btn btn-buy">Confirmar Compra</button>
+                </form>
+            </div>
+        </div>
+
+        <?php if ($pedido_realizado && !empty($trees_newly_acquired)): ?>
         <section id="newly-acquired" class="reveal-section"> 
             <h2 class="congrats-title">Parabéns!</h2>
             <p class="reveal-subtitle">Você cultivou novas árvores:</p>
@@ -612,22 +901,19 @@ if ($result_todes) {
             </div>
         </section>
         <hr style="margin: 40px auto; border: 0; border-top: 1px solid #ddd; width: 80%;" class="scroll-animate">
-        <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['ganhar']) || isset($_POST['ganhar5'])) && empty($trees_newly_acquired)): ?>
+        <?php elseif ($pedido_realizado && empty($trees_newly_acquired)): ?>
         <section id="no-new-items" class="reveal-section scroll-animate">
             <h2 class="section-title" style="color: var(--primary);">Oops!</h2>
              <p style="text-align:center; font-size: 1.1rem;">Não foi possível cultivar novas árvores desta vez. Parece que o kit não germinou. Tente novamente!</p>
         </section>
         <hr style="margin: 40px auto; border: 0; border-top: 1px solid #ddd; width: 80%;" class="scroll-animate">
         <?php endif; ?>
-
-       
     </div>
     
     <footer class="scroll-animate">
         <p>© <?php echo date("Y"); ?> Treedom. Todos os direitos reservados.</p>
     </footer>
 
-    <!-- Modal para visualização da imagem -->
     <div class="modal-img-viewer" id="modalImgViewer">
         <button class="close-modal" id="closeModalBtn" aria-label="Fechar imagem ampliada">&times;</button>
         <img src="" alt="Árvore ampliada" id="modalImgTag">
@@ -676,22 +962,156 @@ if ($result_todes) {
                     modal.classList.add('active');
                 });
             });
-            closeModalBtn.addEventListener('click', () => {
-                modal.classList.remove('active');
-                modalImg.src = '';
-            });
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
+            if(closeModalBtn) {
+                closeModalBtn.addEventListener('click', () => {
                     modal.classList.remove('active');
                     modalImg.src = '';
-                }
-            });
+                });
+            }
+            if(modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                        modalImg.src = '';
+                    }
+                });
+            }
             document.addEventListener('keydown', (e) => {
-                if (modal.classList.contains('active') && (e.key === 'Escape' || e.key === 'Esc')) {
+                if (modal && modal.classList.contains('active') && (e.key === 'Escape' || e.key === 'Esc')) {
                     modal.classList.remove('active');
                     modalImg.src = '';
                 }
             });
+
+            // Modal de pagamento
+            const modalPagamentoBg = document.getElementById('modalPagamentoBg');
+            const closeModalPagamentoBtn = document.getElementById('closeModalPagamentoBtn');
+            if (closeModalPagamentoBtn) {
+                closeModalPagamentoBtn.addEventListener('click', () => {
+                    modalPagamentoBg.classList.remove('active');
+                    window.location.href = 'loja.php';
+                });
+            }
+            if (modalPagamentoBg) {
+                modalPagamentoBg.addEventListener('click', (e) => {
+                    if (e.target === modalPagamentoBg) {
+                        modalPagamentoBg.classList.remove('active');
+                        window.location.href = 'loja.php';
+                    }
+                });
+            }
+            document.addEventListener('keydown', (e) => {
+                if (modalPagamentoBg && modalPagamentoBg.classList.contains('active') && (e.key === 'Escape' || e.key === 'Esc')) {
+                    modalPagamentoBg.classList.remove('active');
+                    window.location.href = 'loja.php';
+                }
+            });
+
+            // Espécies por localidade vindas do PHP
+            const especiesPorLocalidade = <?php echo json_encode($especies_por_localidade); ?>;
+            const selectLocalidade = document.getElementById('localidade');
+            const selectEspecie = document.getElementById('especie');
+
+            if (selectLocalidade && selectEspecie) {
+                selectLocalidade.addEventListener('change', function() {
+                    const loc = this.value;
+                    selectEspecie.innerHTML = '<option value="">Selecione</option>';
+                    if (loc && especiesPorLocalidade[loc]) {
+                        especiesPorLocalidade[loc].forEach(function(esp) {
+                            const opt = document.createElement('option');
+                            opt.value = esp;
+                            opt.textContent = esp;
+                            selectEspecie.appendChild(opt);
+                        });
+                    }
+                });
+            }
+
+            // --- INÍCIO DO NOVO CÓDIGO PARA O MODAL DE PAGAMENTO ---
+            const selecaoInicialPanel = document.getElementById('selecao-inicial-pagamento');
+            const cartaoCreditoPanel = document.getElementById('form-cartao-credito');
+            const metodoPagamentoBtns = document.querySelectorAll('.metodo-pagamento-btn');
+            const pagamentoHiddenInput = document.getElementById('pagamento_hidden');
+            const btnVoltar = document.getElementById('btnVoltarPagamento');
+
+            metodoPagamentoBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    metodoPagamentoBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const metodo = this.dataset.metodo;
+                    pagamentoHiddenInput.value = metodo;
+
+                    if (metodo === 'cartao') {
+                        selecaoInicialPanel.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        cartaoCreditoPanel.style.transition = 'opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s';
+                        
+                        selecaoInicialPanel.style.opacity = '0';
+                        selecaoInicialPanel.style.transform = 'translateX(-20px)';
+
+                        setTimeout(() => {
+                           selecaoInicialPanel.style.display = 'none';
+                           cartaoCreditoPanel.style.display = 'block';
+                           setTimeout(() => {
+                               cartaoCreditoPanel.style.opacity = '1';
+                               cartaoCreditoPanel.style.transform = 'translateX(0)';
+                           }, 20);
+                        }, 300);
+                    }
+                });
+            });
+
+            if (btnVoltar) {
+                btnVoltar.addEventListener('click', function() {
+                     metodoPagamentoBtns.forEach(b => b.classList.remove('active'));
+                     pagamentoHiddenInput.value = '';
+
+                    cartaoCreditoPanel.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    selecaoInicialPanel.style.transition = 'opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s';
+
+                    cartaoCreditoPanel.style.opacity = '0';
+                    cartaoCreditoPanel.style.transform = 'translateX(20px)';
+                    
+                    setTimeout(() => {
+                        cartaoCreditoPanel.style.display = 'none';
+                        selecaoInicialPanel.style.display = 'block';
+                        setTimeout(() => {
+                            selecaoInicialPanel.style.opacity = '1';
+                            selecaoInicialPanel.style.transform = 'translateX(0)';
+                        }, 20);
+                    }, 300);
+                });
+            }
+            // --- FIM DO NOVO CÓDIGO ---
+
+            // --- INÍCIO DA FORMATAÇÃO DOS CAMPOS DO CARTÃO ---
+            const cartaoNumero = document.getElementById('cartao_numero');
+            const cartaoValidade = document.getElementById('cartao_validade');
+            const cartaoCVV = document.getElementById('cartao_cvv');
+
+            if (cartaoNumero) {
+                cartaoNumero.addEventListener('input', function(e) {
+                    let value = this.value.replace(/\D/g, '').slice(0,16);
+                    value = value.replace(/(.{4})/g, '$1 ').trim();
+                    this.value = value;
+                });
+            }
+            if (cartaoValidade) {
+                cartaoValidade.addEventListener('input', function(e) {
+                    let value = this.value.replace(/\D/g, '').slice(0,4);
+                    if (value.length > 2) {
+                        value = value.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+                    }
+                    this.value = value;
+                });
+            }
+            if (cartaoCVV) {
+                cartaoCVV.addEventListener('input', function(e) {
+                    let value = this.value.replace(/\D/g, '').slice(0,4);
+                    this.value = value;
+                });
+            }
+           
         });
     </script>
 </body>
