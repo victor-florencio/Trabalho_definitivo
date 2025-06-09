@@ -269,7 +269,7 @@ include_once ('code/loginC.php');
 <body>
 <nav>
         <div class="nav-container">
-            <a href="inipage.php" class="logo">Treedom</a>
+            <a href="index.html" class="logo">Treedom</a>
             <ul class="nav-links">
                 
                 <li><a href="galeria/galeria.html">Galeria</a></li>
@@ -288,7 +288,7 @@ include_once ('code/loginC.php');
         <h1>PORQUE ARVORES?</h1>
         <p>Apoie a biodiversidade plantando árvores.</p>
         <div>
-            <a href="loja.php" class="btn">COMPRE AGORA</a>
+            <a href="cadastro.php" class="btn">COMPRE AGORA</a>
             <a href="./galeria/galeria.html" class="btn btn-outline">VISITE NOSSA GALERIA</a>
         </div>
     </section>

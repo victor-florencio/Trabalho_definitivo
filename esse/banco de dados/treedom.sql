@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 08/06/2025 às 19:05
+-- Tempo de geração: 10/06/2025 às 00:37
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -31,19 +31,20 @@ CREATE TABLE `arvores` (
   `id` int(11) NOT NULL,
   `localidade` varchar(100) DEFAULT NULL,
   `especie` varchar(50) DEFAULT NULL,
-  `nome` varchar(100) DEFAULT NULL
+  `nome` varchar(100) DEFAULT NULL,
+  `img` varchar(200) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `arvores`
 --
 
-INSERT INTO `arvores` (`id`, `localidade`, `especie`, `nome`) VALUES
-(6, 'Cerrado', 'Ipê-amarelo', NULL),
-(7, 'Mata Atlântica', 'Pau-brasil', NULL),
-(8, 'Cerrado/Mata Atlântica', 'Jatobá', NULL),
-(9, 'Mata Atlântica', 'Jequitibá-rosa', NULL),
-(10, 'Amazônia', 'Copaíba', NULL);
+INSERT INTO `arvores` (`id`, `localidade`, `especie`, `nome`, `img`) VALUES
+(6, 'Cerrado', 'Ipê-amarelo', 'Ipê-amarelo', 'arvore\\ipe.jpg'),
+(7, 'Mata Atlântica', 'Pau-brasil', 'Pau-Brasil', 'arvore\\pau-brasil.webp'),
+(8, 'Cerrado/Mata Atlântica', 'Jatobá', 'Jatobá', 'arvore\\jatoba.jpg'),
+(9, 'Mata Atlântica', 'Jequitibá-rosa', 'Jequitibá-rosa', 'arvore\\jequitoba.jpg'),
+(10, 'Amazônia', 'Copaíba', 'Copaíba', 'arvore\\copa.jpg');
 
 -- --------------------------------------------------------
 
@@ -97,9 +98,9 @@ CREATE TABLE `pedidos` (
 --
 
 INSERT INTO `pedidos` (`id_pedido`, `id_user`, `nome`, `especie`, `localidade`, `data_pedido`, `status`, `img`) VALUES
-(1, 1, 'Kit Sementes Raras', 'Pau-brasil', 'Mata Atlântica', '2025-06-07', 'Aguardando processamento', 'NULL'),
-(5, 1, 'Kit Sementes Raras', 'Copaíba', 'Amazônia', '2025-06-08', 'Aguardando processamento', 'NULL'),
-(6, 1, 'Kit Floresta Diversa', 'Ipê-amarelo', 'Cerrado', '2025-06-08', 'Aguardando processamento', 'NULL');
+(15, 1, 'Copaíba', 'Copaíba', 'Amazônia', '2025-06-08', 'Aguardando processamento', '\\arvore\\copacaiba.jpg'),
+(16, 1, 'Jatobá', 'Jatobá', 'Cerrado/Mata Atlântica', '2025-06-08', 'Aguardando processamento', 'arvore\\jatoba.jpg'),
+(17, 1, 'Copaíba', 'Copaíba', 'Amazônia', '2025-06-08', 'Aguardando processamento', 'arvore\\copa.jpg');
 
 -- --------------------------------------------------------
 
@@ -172,7 +173,30 @@ INSERT INTO `user_cards` (`id`, `id_user`, `id_card`) VALUES
 (52, 1, 10),
 (53, 1, 9),
 (54, 1, 3),
-(55, 1, 6);
+(55, 1, 6),
+(56, 1, 10),
+(57, 1, 2),
+(58, 1, 1),
+(59, 1, 9),
+(60, 1, 3),
+(61, 1, 6),
+(62, 1, 2),
+(63, 1, 1),
+(64, 1, 11),
+(65, 1, 8),
+(66, 1, 8),
+(67, 1, 4),
+(68, 1, 2),
+(69, 1, 7),
+(70, 1, 5),
+(71, 1, 2),
+(72, 1, 1),
+(73, 1, 2),
+(74, 1, 5),
+(75, 1, 6),
+(76, 1, 8),
+(77, 1, 3),
+(78, 1, 8);
 
 -- --------------------------------------------------------
 
@@ -248,13 +272,13 @@ ALTER TABLE `cards`
 -- AUTO_INCREMENT de tabela `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT de tabela `user_cards`
 --
 ALTER TABLE `user_cards`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT de tabela `usuario`
