@@ -42,16 +42,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $especie = trim($_POST['especie'] ?? '');
         $pagamento = $_POST['pagamento'] ?? '';
         if ($localidade && $especie && $pagamento && ($kit == '2' || $kit == '5')) {
-            // Insere na tabela pedidos
-            $nome_pedido = $kit == '2' ? 'Kit Sementes Raras' : 'Kit Floresta Diversa';
+            // Buscar nome e imagem da árvore escolhida
+            $sql_arvore = "SELECT nome, img FROM arvores WHERE localidade = ? AND especie = ? LIMIT 1";
+            $stmt_arvore = $conexao->prepare($sql_arvore);
+            $stmt_arvore->bind_param("ss", $localidade, $especie);
+            $stmt_arvore->execute();
+            $result_arvore = $stmt_arvore->get_result();
+            $nome_pedido = '';
+            $img_pedido = '';
+            if ($row_arvore = $result_arvore->fetch_assoc()) {
+                $nome_pedido = $row_arvore['nome'];
+                $img_pedido = $row_arvore['img'];
+            }
+            $stmt_arvore->close();
+
             $status = 'Aguardando processamento';
-            $img_pedido = 'NULL'; 
             $id_user_escaped = $conexao->real_escape_string($id_user);
             $nome_pedido_escaped = $conexao->real_escape_string($nome_pedido);
             $especie_escaped = $conexao->real_escape_string($especie);
             $localidade_escaped = $conexao->real_escape_string($localidade);
             $status_escaped = $conexao->real_escape_string($status);
             $img_escaped = $conexao->real_escape_string($img_pedido);
+
             $sql_pedido = "INSERT INTO pedidos (id_user, nome, especie, localidade, data_pedido, status, img)
                 VALUES ('$id_user_escaped', '$nome_pedido_escaped', '$especie_escaped', '$localidade_escaped', NOW(), '$status_escaped', '$img_escaped')";
             $conexao->query($sql_pedido);
@@ -750,13 +762,11 @@ if ($result_todes) {
             <ul class="nav-links">
                 <li><a href="pedidos.php">Minhas Compras</a></li>
                 <li><a href="inipage.php#about">Sobre</a></li>
-                <li><a href="loja.php">Loja de Árvores</a></li>
+                <li><a href="inipage.php">Retornar</a></li>
                 <li class="dropdown">
                     <?php if(isset($_SESSION['nome'])): ?>
                         <a href="#"><?php echo htmlspecialchars($_SESSION['nome']);?> <span class="seta">&#9660;</span></a>
                         <ul class="submenu">
-                            <li><a href="loja.php">Minhas Árvores</a></li> 
-                            <li><a href="inventario.php">Inventário</a></li> 
                             <li><a href="code/logout.php">Sair</a></li>
                         </ul>
                     <?php else: ?>
