@@ -790,7 +790,7 @@ if ($result_todes) {
            
             <div class="store-items-row">
                 <div class="store-item">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPSnpzOOJ_IIWn5ulOjQRCCZnd1S8b7ri4sQ&s" alt="Kit de Plantio de Árvores" class="store-item-image">
+                    <img src="arvore\ipe.jpg" alt="Kit de Plantio de Árvores" class="store-item-image">
                     <div class="store-item-details">
                         <h3>Sementes Raras</h3>
                         <p class="store-item-description">Compre uma árvore e ganhe 2 cartas para seu bosque</p>
@@ -801,7 +801,7 @@ if ($result_todes) {
                     </div>
                 </div>
                 <div class="store-item">
-                    <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="Kit Floresta Diversa" class="store-item-image">
+                    <img src="arvore\copa.jpg" alt="Kit Floresta Diversa" class="store-item-image">
                     <div class="store-item-details">
                         <h3>Floresta Diversa</h3>
                         <p class="store-item-description">Receba 5 cartas diferentes para enriquecer ainda mais seu bosque!</p>
